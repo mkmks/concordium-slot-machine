@@ -40,7 +40,7 @@ fn slot_machine_init<S: HasStateApi>(
 ) -> InitResult<SlotMachineState<S>> {
     // Always succeeds
     Ok(SlotMachineState {
-	players: _state_builder.new_map(),
+        players: _state_builder.new_map(),
         oracle_randomness: 0,
         state: SlotMachineEnum::WaitingForPlayer,
     })
@@ -109,32 +109,33 @@ fn receive_payout<S: HasStateApi>(
     host: &mut impl HasHost<SlotMachineState<S>, StateApiType = S>,
 ) -> ReceiveResult<()> {
     // Only possible if payout is ready
-    ensure!((*host.state_mut()).state == SlotMachineEnum::PayoutReady);
-		
-    if let Address::Account(player_address) = _ctx.sender() {
-	let m = 10;
-	let p = 2;
-	if let Some(player_randomness) = (*host.state()).players.get(&player_address) {
-            // this game is done, wait for next player
-            (*host.state_mut()).state = SlotMachineEnum::WaitingForPlayer;
+    ensure!((*host.state()).state == SlotMachineEnum::PayoutReady);
 
-	    // check for payout
+    if let Address::Account(player_address) = _ctx.sender() {
+        let m = 10;
+        let p = 2;
+        if let Some(player_randomness) = (*host.state()).players.get(&player_address) {
+            // check for payout
             if ((*host.state()).oracle_randomness % m + *player_randomness % m) % m <= p {
-		(*host.state_mut()).state = SlotMachineEnum::PaidOut;
-		Ok(host.invoke_transfer(
+                // this game is done, wait for next player
+                (*host.state_mut()).state = SlotMachineEnum::WaitingForPlayer;
+                Ok(host.invoke_transfer(
                     &player_address,
                     Amount {
-			micro_ccd: 2_000_000,
+                        micro_ccd: 2_000_000,
                     },
-		)?)
+                )?)
             } else {
-		(*host.state_mut()).state = SlotMachineEnum::Intact;
-		Ok(())
+                // this game is done, wait for next player
+                (*host.state_mut()).state = SlotMachineEnum::WaitingForPlayer;
+                Ok(())
             }
-	} else {
+        } else {
             Ok(())
-	}
-    } else { Ok (()) }
+        }
+    } else {
+        Ok(())
+    }
 }
 
 /// View the state and slot machine.
@@ -142,7 +143,7 @@ fn receive_payout<S: HasStateApi>(
 fn slot_machine_view<S: HasStateApi>(
     _ctx: &impl HasReceiveContext,
     host: &impl HasHost<SlotMachineState<S>, StateApiType = S>,
-) -> ReceiveResult<(u8,  Amount)> {
+) -> ReceiveResult<(u8, Amount)> {
     let current_balance = host.self_balance();
     Ok(((*host.state()).oracle_randomness, current_balance))
 }
