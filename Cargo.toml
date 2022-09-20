@@ -2,7 +2,7 @@
 name = "slot-machine"
 version = "0.0.1"
 authors = ["Concordium <developers@concordium.com>"]
-edition = "2022"
+edition = "2018"
 license = "MPL-2.0"
 description = "Slot machine smart contract."
 homepage = "https://github.com/mkmks/concordium-slot-machine"
@@ -16,10 +16,8 @@ crate-type = ["cdylib", "rlib"]
 default = ["std"]
 std = ["concordium-std/std"]
 
-[dependencies.concordium-std]
-version = "4"
-path = "concordium-rust-smart-contracts/concordium-std"
-default-features = false
+[dependencies]
+concordium-std = "4.0.0"
 
 [profile.release]
 opt-level = 3
