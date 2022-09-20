@@ -10,11 +10,11 @@ use concordium_std::*;
 #[derive(Debug, Serialize, PartialEq, Eq, Clone, Copy, SchemaType)]
 enum SlotMachineEnum {
     /// People can insert some CCD to play a game.
-    Intact,
-    /// Someone played a game. Now waiting for oracle.
+    WaitingForPlayer,
+    /// Player started a game. Now waiting for oracle.
     ActiveGame,
     /// The slot machine paid out rewards.
-    PaidOut,
+    PayoutReady,
 }
 
 /// The state of the slot machine
@@ -43,7 +43,7 @@ fn slot_machine_init<S: HasStateApi>(
         user_address: None,
         user_randomness: 0,
         oracle_randomness: 0,
-        state: SlotMachineEnum::Intact,
+        state: SlotMachineEnum::WaitingForPlayer,
     })
 }
 
@@ -56,6 +56,9 @@ fn slot_insert<S: HasStateApi>(
 ) -> ReceiveResult<()> {
     // People have to pay 1 CCD to pull the lever of the slot machine
     ensure!(amount == Amount { micro_ccd: 1000000 });
+
+    // Can only play if machine is waiting
+    ensure!((*host.state_mut()).state == SlotMachineEnum::WaitingForPlayer);
 
     // update randomness and address of the player and set has_inserted to true
     if let Address::Account(player) = ctx.sender() {
@@ -88,7 +91,12 @@ fn oracle_insert<S: HasStateApi>(
     // Ensure only the owner can update the oracle.
     ensure!(sender.matches_account(&owner));
 
-    let parameter: u8 = ctx.parameter_cursor().get()?; // todo: change type of randomness
+    let parameter: u8 = ctx.parameter_cursor().get()?;
+
+    // if user is playing, transition to ready for payout
+    if (*host.state_mut()).state == SlotMachineEnum::ActiveGame {
+        (*host.state_mut()).state = SlotMachineEnum::PayoutReady;
+    }
 
     // update randomness of oracle
     (*host.state_mut()).user_randomness = parameter;
@@ -96,18 +104,24 @@ fn oracle_insert<S: HasStateApi>(
     Ok(())
 }
 
-/// Check if the player won or not
+/// Check if the player won or not and payout
 #[receive(contract = "SlotMachine", name = "receive_payout", mutable)]
 fn receive_payout<S: HasStateApi>(
     _ctx: &impl HasReceiveContext,
     host: &mut impl HasHost<SlotMachineState, StateApiType = S>,
 ) -> ReceiveResult<()> {
+    // Only possible if payout is ready
+    ensure!((*host.state_mut()).state == SlotMachineEnum::PayoutReady);
+    
     let st = *host.state();
     let m = 10;
     let p = 2;
     if let Some(address) = st.user_address {
+        // this game is done, wait for next player
+        (*host.state_mut()).state = SlotMachineEnum::WaitingForPlayer;
+
+        // check for payout
         if (st.oracle_randomness % m + st.user_randomness % m) % m <= p {
-            (*host.state_mut()).state = SlotMachineEnum::PaidOut;
             Ok(host.invoke_transfer(
                 &address,
                 Amount {
@@ -115,7 +129,6 @@ fn receive_payout<S: HasStateApi>(
                 },
             )?)
         } else {
-            (*host.state_mut()).state = SlotMachineEnum::Intact;
             Ok(())
         }
     } else {
