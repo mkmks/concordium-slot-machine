@@ -25,7 +25,7 @@ struct SlotMachineState {
     state: SlotMachineEnum,
 }
 
-/// Setup a new Intact piggy bank.
+/// Setup a new slot machine state.
 #[init(contract = "SlotMachine")]
 fn slot_machine_init<S: HasStateApi>(
     _ctx: &impl HasInitContext,
@@ -50,7 +50,7 @@ fn slot_insert<S: HasStateApi>(
     // update randomness of user and set has_inserted to true
     (*host.state_mut()).user_randomness = parameter;
     (*host.state_mut()).state = SlotMachineEnum::ActiveGame;
-    
+
     Ok(())
 }
 
@@ -66,22 +66,21 @@ fn oracle_insert<S: HasStateApi>(
     // an account.
     let sender = ctx.sender();
 
-    // Ensure only the owner can smash the piggy bank.
+    // Ensure only the owner can update the oracle.
     ensure!(sender.matches_account(&owner));
-
 
     let parameter: u8 = ctx.parameter_cursor().get()?; // todo: change type of randomness
 
     // update randomness of oracle
     (*host.state_mut()).user_randomness = parameter;
-    
+
     Ok(())
 }
 
 
-/// View the state and balance of the piggy bank.
+/// View the state and slot machine.
 #[receive(contract = "SlotMachine", name = "view")]
-fn piggy_view<S: HasStateApi>(
+fn slot_machine_view<S: HasStateApi>(
     _ctx: &impl HasReceiveContext,
     host: &impl HasHost<SlotMachineState, StateApiType = S>,
 ) -> ReceiveResult<(SlotMachineState, Amount)> {
