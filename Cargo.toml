@@ -2,7 +2,7 @@
 name = "slot-machine"
 version = "0.0.1"
 authors = ["Concordium <developers@concordium.com>"]
-edition = "2022"
+edition = "2018"
 license = "MPL-2.0"
 description = "Slot machine smart contract."
 homepage = "https://github.com/mkmks/concordium-slot-machine"

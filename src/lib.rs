@@ -16,13 +16,11 @@
 // Pulling in everything from the smart contract standard library.
 use concordium_std::*;
 
-/// The state of the piggy bank
+/// The state of the slot machine
 #[derive(Debug, Serialize, PartialEq, Eq, Clone, Copy)]
-enum PiggyBankState {
-    /// Alive and well, allows for CCD to be inserted.
-    Intact,
-    /// The piggy bank has been emptied, preventing further CCD to be inserted.
-    Smashed,
+struct SlotMachineState {
+    user_randomness: u8,
+    oracle_randomness: u8,
 }
 
 /// Setup a new Intact piggy bank.
