@@ -99,6 +99,7 @@ fn oracle_insert<S: HasStateApi>(
 }
 
 /// Check if the player won or not
+#[receive(contract = "SlotMachine", name = "receive_payout", mutable)]
 fn receive_payout<S: HasStateApi>(
     ctx: &impl HasReceiveContext,
     host: &mut impl HasHost<SlotMachineState, StateApiType = S>,
