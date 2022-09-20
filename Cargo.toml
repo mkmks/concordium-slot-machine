@@ -16,10 +16,8 @@ crate-type = ["cdylib", "rlib"]
 default = ["std"]
 std = ["concordium-std/std"]
 
-[dependencies.concordium-std]
-version = "4"
-path = "concordium-rust-smart-contracts/concordium-std"
-default-features = false
+[dependencies]
+concordium-std = "4.0.0"
 
 [profile.release]
 opt-level = 3
