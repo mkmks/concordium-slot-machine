@@ -8,10 +8,21 @@ use concordium_std::*;
 
 /// The state of the slot machine
 #[derive(Debug, Serialize, PartialEq, Eq, Clone, Copy)]
+enum SlotMachineEnum {
+    /// People can insert some CCD to play a game.
+    Intact,
+    /// Someone played a game. Now waiting for oracle.
+    ActiveGame,
+    /// The slot machine paid out rewards.
+    PaidOut,
+}
+
+/// The state of the slot machine
+#[derive(Debug, Serialize, PartialEq, Eq, Clone, Copy)]
 struct SlotMachineState {
     user_randomness: u8,
     oracle_randomness: u8,
-    has_inserted: bool, // whether the user already added randomness
+    state: SlotMachineEnum,
 }
 
 /// Setup a new Intact piggy bank.
@@ -21,7 +32,7 @@ fn slot_machine_init<S: HasStateApi>(
     _state_builder: &mut StateBuilder<S>,
 ) -> InitResult<SlotMachineState> {
     // Always succeeds
-    Ok(SlotMachineState{user_randomness: 0, oracle_randomness: 0, has_inserted: false})
+    Ok(SlotMachineState{user_randomness: 0, oracle_randomness: 0, state: SlotMachineEnum::Intact})
 }
 
 /// Play by inserting CCD and randomness, allowed by anyone.
@@ -29,13 +40,16 @@ fn slot_machine_init<S: HasStateApi>(
 fn slot_insert<S: HasStateApi>(
     ctx: &impl HasReceiveContext,
     host: &mut impl HasHost<SlotMachineState, StateApiType = S>,
-    _amount: Amount,
+    amount: Amount,
 ) -> ReceiveResult<()> {
     let parameter: u8 = ctx.parameter_cursor().get()?; // todo: change type of randomness
 
+    // People have to pay 1 CCD to pull the lever of the slot machine
+    ensure!(amount == Amount { micro_ccd: 1000000 });
+
     // update randomness of user and set has_inserted to true
     (*host.state_mut()).user_randomness = parameter;
-    (*host.state_mut()).has_inserted = true;
+    (*host.state_mut()).state = SlotMachineEnum::ActiveGame;
     
     Ok(())
 }
