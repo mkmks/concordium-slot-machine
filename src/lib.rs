@@ -18,7 +18,7 @@ enum SlotMachineEnum {
 }
 
 /// The state of the slot machine
-#[derive(Debug, Serial, DeserialWithState, SchemaType)]
+#[derive(Debug, Serial, DeserialWithState)]
 #[concordium(state_parameter = "S")]
 struct SlotMachineState<S: HasStateApi> {
     players: StateMap<AccountAddress, u8, S>,
