@@ -40,7 +40,7 @@ fn slot_machine_init<S: HasStateApi>(
 ) -> InitResult<SlotMachineState> {
     // Always succeeds
     Ok(SlotMachineState {
-	user_address: None,
+        user_address: None,
         user_randomness: 0,
         oracle_randomness: 0,
         state: SlotMachineEnum::Intact,
@@ -48,30 +48,24 @@ fn slot_machine_init<S: HasStateApi>(
 }
 
 /// Play by inserting CCD and randomness, allowed by anyone.
-#[receive(
-    contract = "SlotMachine",
-    name = "insert",
-    payable,
-    mutable,
-    parameter = "RandomValue"
-)]
+#[receive(contract = "SlotMachine", name = "insert", payable, mutable)]
 fn slot_insert<S: HasStateApi>(
     ctx: &impl HasReceiveContext,
     host: &mut impl HasHost<SlotMachineState, StateApiType = S>,
     amount: Amount,
 ) -> ReceiveResult<()> {
-    let parameter: u8 = ctx.parameter_cursor().get()?; // todo: change type of randomness
     // People have to pay 1 CCD to pull the lever of the slot machine
     ensure!(amount == Amount { micro_ccd: 1000000 });
 
     // update randomness and address of the player and set has_inserted to true
     if let Address::Account(player) = ctx.sender() {
-	(*host.state_mut()).user_address = Some(player);
-	(*host.state_mut()).user_randomness = parameter;
-	(*host.state_mut()).state = SlotMachineEnum::ActiveGame;
-	Ok(())
-    } else { Ok(()) }
-
+        (*host.state_mut()).user_address = Some(player);
+        (*host.state_mut()).user_randomness = 50; // todo: change to a random input of user
+        (*host.state_mut()).state = SlotMachineEnum::ActiveGame;
+        Ok(())
+    } else {
+        Ok(())
+    }
 }
 
 /// Add oracle randomness. Only allowed by owner of smart contract.
@@ -105,21 +99,28 @@ fn oracle_insert<S: HasStateApi>(
 /// Check if the player won or not
 #[receive(contract = "SlotMachine", name = "receive_payout", mutable)]
 fn receive_payout<S: HasStateApi>(
-    ctx: &impl HasReceiveContext,
+    _ctx: &impl HasReceiveContext,
     host: &mut impl HasHost<SlotMachineState, StateApiType = S>,
 ) -> ReceiveResult<()> {
     let st = *host.state();
     let m = 10;
     let p = 2;
     if let Some(address) = st.user_address {
-	if (st.oracle_randomness % m + st.user_randomness % m) % m <= p {
-	    (*host.state_mut()).state = SlotMachineEnum::PaidOut;
-	    Ok(host.invoke_transfer(&address, Amount { micro_ccd: 2_000_000, })?)
-	} else {
-	    (*host.state_mut()).state = SlotMachineEnum::Intact;
-	    Ok(())
-	}
-    } else { Ok (()) }
+        if (st.oracle_randomness % m + st.user_randomness % m) % m <= p {
+            (*host.state_mut()).state = SlotMachineEnum::PaidOut;
+            Ok(host.invoke_transfer(
+                &address,
+                Amount {
+                    micro_ccd: 2_000_000,
+                },
+            )?)
+        } else {
+            (*host.state_mut()).state = SlotMachineEnum::Intact;
+            Ok(())
+        }
+    } else {
+        Ok(())
+    }
 }
 
 /// View the state and slot machine.
