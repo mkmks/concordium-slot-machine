@@ -1,13 +1,13 @@
 [package]
-name = "piggy-bank-part1"
-version = "0.1.1"
+name = "slot-machine"
+version = "0.0.1"
 authors = ["Concordium <developers@concordium.com>"]
-edition = "2018"
+edition = "2022"
 license = "MPL-2.0"
-description = "Two-step transfer smart contract."
-homepage = "https://github.com/concordium/concordium-rust-smart-contracts"
-repository = "https://github.com/concordium/concordium-rust-smart-contracts"
-readme = "../README.md"
+description = "Slot machine smart contract."
+homepage = "https://github.com/mkmks/concordium-slot-machine"
+repository = "https://github.com/mkmks/concordium-slot-machine"
+readme = "README.md"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
