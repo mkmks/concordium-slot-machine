@@ -7,7 +7,7 @@
 use concordium_std::*;
 
 /// The state of the slot machine
-#[derive(Debug, Serialize, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, Serialize, PartialEq, Eq, Clone, Copy, SchemaType)]
 enum SlotMachineEnum {
     /// People can insert some CCD to play a game.
     Intact,
@@ -18,11 +18,17 @@ enum SlotMachineEnum {
 }
 
 /// The state of the slot machine
-#[derive(Debug, Serialize, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, Serialize, PartialEq, Eq, Clone, Copy, SchemaType)]
 struct SlotMachineState {
     user_randomness: u8,
     oracle_randomness: u8,
     state: SlotMachineEnum,
+}
+
+#[derive(Serialize, SchemaType)]
+struct RandomValue {
+    /// Random value
+    random_value: u8,
 }
 
 /// Setup a new slot machine state.
@@ -32,11 +38,21 @@ fn slot_machine_init<S: HasStateApi>(
     _state_builder: &mut StateBuilder<S>,
 ) -> InitResult<SlotMachineState> {
     // Always succeeds
-    Ok(SlotMachineState{user_randomness: 0, oracle_randomness: 0, state: SlotMachineEnum::Intact})
+    Ok(SlotMachineState {
+        user_randomness: 0,
+        oracle_randomness: 0,
+        state: SlotMachineEnum::Intact,
+    })
 }
 
 /// Play by inserting CCD and randomness, allowed by anyone.
-#[receive(contract = "SlotMachine", name = "insert", payable, mutable)]
+#[receive(
+    contract = "SlotMachine",
+    name = "insert",
+    payable,
+    mutable,
+    parameter = "RandomValue"
+)]
 fn slot_insert<S: HasStateApi>(
     ctx: &impl HasReceiveContext,
     host: &mut impl HasHost<SlotMachineState, StateApiType = S>,
@@ -55,7 +71,12 @@ fn slot_insert<S: HasStateApi>(
 }
 
 /// Add oracle randomness. Only allowed by owner of smart contract.
-#[receive(contract = "SlotMachine", name = "oracle_insert", mutable)]
+#[receive(
+    contract = "SlotMachine",
+    name = "oracle_insert",
+    mutable,
+    parameter = "RandomValue"
+)]
 fn oracle_insert<S: HasStateApi>(
     ctx: &impl HasReceiveContext,
     host: &mut impl HasHost<SlotMachineState, StateApiType = S>,
@@ -76,7 +97,6 @@ fn oracle_insert<S: HasStateApi>(
 
     Ok(())
 }
-
 
 /// View the state and slot machine.
 #[receive(contract = "SlotMachine", name = "view")]
