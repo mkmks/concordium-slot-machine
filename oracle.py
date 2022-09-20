@@ -4,7 +4,7 @@ import subprocess
 import os
 
 client_path = os.path.expanduser("~/bin/concordium-client")
-contract_name = "mySlotMachine11"
+contract_name = "mySlotMachine15"
 max_rand = 9 # generate random numbers in [0, 9]
 
 while True:

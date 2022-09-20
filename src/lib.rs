@@ -69,6 +69,16 @@ fn slot_insert<S: HasStateApi>(
     }
 }
 
+/// Send money to contract
+#[receive(contract = "SlotMachine", name = "pay", payable, mutable)]
+fn slot_pay<S: HasStateApi>(
+    _ctx: &impl HasReceiveContext,
+    _host: &mut impl HasHost<SlotMachineState<S>, StateApiType = S>,
+    _amount: Amount,
+) -> ReceiveResult<()> {
+    Ok(())
+}
+
 /// Add oracle randomness. Only allowed by owner of smart contract.
 #[receive(
     contract = "SlotMachine",
@@ -122,7 +132,7 @@ fn receive_payout<S: HasStateApi>(
                 Ok(host.invoke_transfer(
                     &player_address,
                     Amount {
-                        micro_ccd: 2_000_000,
+                        micro_ccd: 2000000,
                     },
                 )?)
             } else {
