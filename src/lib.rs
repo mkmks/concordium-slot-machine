@@ -98,6 +98,24 @@ fn oracle_insert<S: HasStateApi>(
     Ok(())
 }
 
+/// Check if the player won or not
+fn receive_payout<S: HasStateApi>(
+    ctx: &impl HasReceiveContext,
+    host: &mut impl HasHost<SlotMachineState, StateApiType = S>,
+) -> ReceiveResult<()> {
+    let owner = ctx.owner();
+    let st = *host.state();
+    let m = 10;
+    let p = 2;
+    if (st.oracle_randomness % m + st.user_randomness % m) % m <= p {
+	(*host.state_mut()).state = SlotMachineEnum::PaidOut;
+	Ok(host.invoke_transfer(&owner, Amount { micro_ccd: 1_000_000, })?)
+    } else {
+	(*host.state_mut()).state = SlotMachineEnum::Intact;
+	Ok(())
+    }
+}
+
 /// View the state and slot machine.
 #[receive(contract = "SlotMachine", name = "view")]
 fn slot_machine_view<S: HasStateApi>(
